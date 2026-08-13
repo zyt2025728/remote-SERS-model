@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Raster figures are reproducible local artifacts.  Version the text-based SVGs.
+results/figures/*.png

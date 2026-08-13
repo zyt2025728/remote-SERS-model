@@ -1,0 +1,11 @@
+parameter,value
+wavelength_nm,633.0
+radius_nm,18.0
+number_of_particles,56.0
+mean_center_distance_nm,38.42177875977196
+mean_gap_nm,2.4217787597719607
+maximum_normalized_hotspot_intensity,0.8310742642201955
+attenuation_coefficient_per_nm,0.012860359406254554
+fit_r_squared,0.701893331525802
+propagation_length_nm,77.75832450791822
+matrix_condition_number,2.0240213056106335
