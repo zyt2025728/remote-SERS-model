@@ -1,0 +1,17 @@
+metric,value
+N,200
+seed,20260813
+radius_mean_nm,19.787664191261086
+radius_std_nm,2.4380655060915224
+gap_mean_nm,2.571486884390931
+gap_std_nm,0.9142311136849008
+coordination_number_distribution,"{1: 23, 2: 100, 3: 62, 4: 14, 5: 1}"
+number_of_connected_components,1
+mean_degree,2.35
+maximum_degree,5
+source_location_nm,"[-424.7370726364602, -464.2372615719361]"
+source_waist_nm,65.0
+minimum_surface_gap_nm,0.07909344774635407
+relative_linear_residual,2.0839659550900426e-16
+wavelength_nm,633.0
+silver_relative_permittivity_assumption,(-15+1j)
