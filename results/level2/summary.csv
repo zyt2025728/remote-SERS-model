@@ -4,14 +4,32 @@ seed,20260813
 radius_mean_nm,19.787664191261086
 radius_std_nm,2.4380655060915224
 gap_mean_nm,2.571486884390931
+gap_median_nm,2.5230501681868596
 gap_std_nm,0.9142311136849008
+gap_min_nm,0.07909344774635407
+gap_max_nm,5.943766979778019
 coordination_number_distribution,"{1: 23, 2: 100, 3: 62, 4: 14, 5: 1}"
 number_of_connected_components,1
 mean_degree,2.35
 maximum_degree,5
 source_location_nm,"[-424.7370726364602, -464.2372615719361]"
 source_waist_nm,65.0
+polarization_xyz,"[1.0, 0.0, 0.0]"
+incident_field_peak_amplitude_v_per_m,1.0
+surrounding_refractive_index,1.0
 minimum_surface_gap_nm,0.07909344774635407
 relative_linear_residual,2.0839659550900426e-16
 wavelength_nm,633.0
 silver_relative_permittivity_assumption,(-15+1j)
+silver_dielectric_source,UNSOURCED ILLUSTRATIVE ASSUMPTION; not physical validation
+directly_illuminated_particle_count,6
+remote_particle_count,194
+remote_threshold_incident_intensity_fraction,0.0001
+finite_remote_dipole_excitation,True
+strongest_remote_particle_id,62
+strongest_remote_normalized_dipole_intensity,0.007729364530239977
+geodesic_path_edge_count,4
+downstream_increase_on_path,False
+any_natural_downstream_increase,True
+example_upstream_particle_id,1
+example_downstream_particle_id,46
