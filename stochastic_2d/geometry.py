@@ -12,14 +12,14 @@ from numpy.typing import NDArray
 @dataclass(frozen=True)
 class GeometryConfig:
     n_particles: int = 200
-    radius_mean_nm: float = 20.0
-    radius_std_nm: float = 2.5
-    radius_min_nm: float = 12.0
-    radius_max_nm: float = 28.0
-    gap_mean_nm: float = 2.5
-    gap_std_nm: float = 0.75
-    gap_min_nm: float = 0.5
-    gap_max_nm: float = 5.0
+    radius_mean_nm: float = 10.0
+    radius_std_nm: float = 0.0
+    radius_min_nm: float = 10.0
+    radius_max_nm: float = 10.0
+    gap_mean_nm: float = 3.0
+    gap_std_nm: float = 1.0
+    gap_min_nm: float = 1.0
+    gap_max_nm: float = 6.0
     positional_disorder_rad: float = 0.45
     connection_gap_nm: float = 6.0
     seed: int = 20260813
@@ -115,7 +115,9 @@ def generate_aggregate(config: GeometryConfig = GeometryConfig()) -> Aggregate:
             separation = radii[parent] + radii[child] + gap
             candidate = positions[parent] + separation * np.array([math.cos(angle), math.sin(angle)])
             center_distances = np.linalg.norm(positions[:child] - candidate, axis=1)
-            required = radii[:child] + radii[child]
+            # Maintain the configured classical-PDA minimum surface gap against
+            # every particle, including incidental contacts.
+            required = radii[:child] + radii[child] + config.gap_min_nm
             if np.all(center_distances >= required - 1e-10):
                 positions[child] = candidate
                 attachment_edges.append((parent, child))
