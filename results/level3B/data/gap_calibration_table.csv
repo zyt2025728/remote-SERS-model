@@ -1,0 +1,1 @@
+gap_nm,radius_nm,wavelength_nm,polarization_deg,PDA_Eparallel_real,PDA_Eparallel_imag,FW_Eparallel_real,FW_Eparallel_imag,Cparallel_real,Cparallel_imag,Cparallel_abs,Cparallel_phase_deg,C_M2,C_M4,solver_backend,convergence_status

@@ -1,0 +1,1 @@
+gap_nm,radius_nm,wavelength_nm,polarization_deg,solver_backend,Egap_complex_real_V_per_m,Egap_complex_imag_V_per_m,Egap_abs_V_per_m,Egap_phase_deg,Egap_over_E0_abs,PDA_Egap_abs_V_per_m,correction_abs,correction_phase_deg,convergence_status
