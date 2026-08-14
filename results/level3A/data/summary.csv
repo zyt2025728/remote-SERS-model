@@ -1,0 +1,50 @@
+metric,value
+particles,200
+near_contact_gaps,254
+hotspots,254
+gap_minimum_threshold_nm,1.0
+gap_maximum_threshold_nm,6.0
+gap_mean_nm,3.171086949744263
+gap_median_nm,3.1344645955339416
+gap_min_nm,1.0471677285404368
+gap_max_nm,5.833763039491924
+source_hotspots,30
+transition_hotspots,193
+remote_hotspots,31
+remote_percent,12.204724409448819
+strongest_source_hotspot,229
+source_particles,"[147, 169]"
+source_coordinates_nm,"[-72.25063443637887, -272.80625594421815]"
+source_gap_nm,2.2485287702685746
+source_euclidean_nm,11.12426438513429
+source_geodesic_nm,0.0
+source_M2,11.240323650697121
+source_M4,126.34487577242106
+strongest_remote_hotspot,110
+remote_particles,"[57, 77]"
+remote_coordinates_nm,"[338.23713994233503, 22.574023027812753]"
+remote_coordination,"[2, 2]"
+remote_gap_nm,2.8110110313244405
+remote_euclidean_nm,516.3056947029404
+remote_geodesic_nm,488.562793988416
+remote_geodesic_steps,22
+remote_M2_inc,2.8673429278198163e-77
+remote_M2_scat,4.4969499985767445e-05
+remote_M2_total,4.4969499985767445e-05
+remote_M4,2.0222559289699383e-09
+remote_incident_to_scattered_ratio,6.376194818104075e-73
+remote_source_M2_ratio,4.0007299952593845e-06
+remote_source_M4_ratio,1.6005840494968158e-11
+downstream_transitions,418
+enhancement_events,183
+enhancement_probability,0.43779904306220097
+maximum_enhancement_ratio,1294.235349767153
+median_enhancement_ratio,3.057303157640156
+percentile95_enhancement_ratio,49.046314754963234
+strongest_remote_event,"(192, 191, np.float64(622.7750124078424), np.float64(632.2390969801896), np.float64(9.941157765791944e-13), np.float64(2.2849640315294214e-10), np.float64(229.84888534734907), np.True_, np.str_('remote'))"
+moderate_particle_strong_hotspot_example,158
+strong_particle_weak_hotspot_example,192
+strongest_hotspot_adjacent_to_strongest_particle,True
+all_particle_contributions_per_hotspot,200
+matrix_finite,True
+hotspot_fields_finite,True

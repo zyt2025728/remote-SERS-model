@@ -1,0 +1,6 @@
+upstream_degree,particle_count,downstream_edges,enhancements,probability
+1,19,0,0,0
+2,84,63,9,0.14285714285714285
+3,70,97,12,0.12371134020618557
+4,24,44,5,0.11363636363636363
+5,3,8,1,0.125
