@@ -1,0 +1,11 @@
+seed,total_hotspot_count,calibrated_hotspot_count,below_domain_hotspot_count,above_domain_hotspot_count,calibrated_fraction,remote_hotspot_calibrated_fraction,strongest_CDA_remote_hotspot_id,strongest_CDA_remote_inside_calibration_domain
+20260813,254,254,0,0,1.0,1.0,110,True
+20365542,248,248,0,0,1.0,1.0,187,True
+20470271,263,263,0,0,1.0,1.0,159,True
+20575000,251,251,0,0,1.0,1.0,177,True
+20679729,254,254,0,0,1.0,1.0,247,True
+20784458,259,259,0,0,1.0,1.0,150,True
+20889187,247,247,0,0,1.0,1.0,74,True
+20993916,265,265,0,0,1.0,1.0,109,True
+21098645,271,271,0,0,1.0,1.0,83,True
+21203374,253,253,0,0,1.0,1.0,158,True
