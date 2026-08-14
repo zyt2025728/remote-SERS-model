@@ -1,6 +1,15 @@
-"""Level 3B dimer calibration interfaces (full-wave data required)."""
+"""Level-3B isolated-dimer full-wave calibration tools."""
 
-from .calibration import FullWaveCalibration, FullWaveCalibrationError
-from .pda_dimer import solve_pda_dimer
+from .calibration import (
+    CONFIG,
+    Configuration,
+    FullWaveCalibration,
+    FullWaveCalibrationError,
+)
 
-__all__ = ["FullWaveCalibration", "FullWaveCalibrationError", "solve_pda_dimer"]
+__all__ = [
+    "CONFIG",
+    "Configuration",
+    "FullWaveCalibration",
+    "FullWaveCalibrationError",
+]
