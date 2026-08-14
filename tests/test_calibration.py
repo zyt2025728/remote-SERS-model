@@ -3,6 +3,7 @@ import pytest
 
 from fullwave_calibration.calibration import CONFIG, converged, phase_delta_deg
 from fullwave_calibration.import_comsol_results import EXPECTED_EPSILON, validate
+from fullwave_calibration.postprocess import build_calibration, correct_network, interpolate_complex
 import pandas as pd
 import miepy
 
@@ -46,3 +47,32 @@ def test_comsol_import_rejects_incompatible_physics():
     row["wavelength_nm"] = 532
     with pytest.raises(ValueError, match="wavelength"):
         validate(pd.DataFrame([row]))
+
+
+def test_complex_interpolation_nodes_and_no_extrapolation():
+    values = np.arange(8) + 1j*np.arange(8)[::-1]
+    assert np.array_equal(interpolate_complex(CONFIG.gaps_nm, values, CONFIG.gaps_nm), values)
+    with pytest.raises(ValueError, match="outside calibrated"):
+        interpolate_complex(CONFIG.gaps_nm, values, [6.01])
+
+
+def test_no_longitudinal_division_at_90_and_phase_preserved():
+    rows=[]
+    cp, ct=2+1j, -0.5+0.25j
+    for gap in CONFIG.gaps_nm:
+        for angle in CONFIG.polarizations_deg:
+            t=np.deg2rad(angle); px=np.cos(t)*(1+0.2j); py=np.sin(t)*(0.7-0.1j)
+            rows.append(dict(gap_nm=gap,polarization_deg=angle,
+                PDA_Ex_real=px.real,PDA_Ex_imag=px.imag,PDA_Ey_real=py.real,PDA_Ey_imag=py.imag,
+                Egap_Ex_real_V_per_m=(cp*px).real,Egap_Ex_imag_V_per_m=(cp*px).imag,
+                Egap_Ey_real_V_per_m=(ct*py).real,Egap_Ey_imag_V_per_m=(ct*py).imag))
+    calibration, validation=build_calibration(pd.DataFrame(rows))
+    assert np.allclose(calibration.Cparallel_real+1j*calibration.Cparallel_imag,cp)
+    assert np.allclose(calibration.Cperp_real+1j*calibration.Cperp_imag,ct)
+    assert validation.relative_magnitude_error.max()<1e-14
+    network=pd.DataFrame([dict(hotspot_id="h",gap_nm=3,u_gap_x=1.,u_gap_y=0.,
+        PDA_Ex_real=1.,PDA_Ex_imag=1.,PDA_Ey_real=0.,PDA_Ey_imag=0.,
+        remote_classification="remote",x_nm=0.,y_nm=0.)])
+    corrected=correct_network(network,calibration)
+    got=corrected.FWcorrected_Ex_real.iloc[0]+1j*corrected.FWcorrected_Ex_imag.iloc[0]
+    assert np.isclose(got,cp*(1+1j))
