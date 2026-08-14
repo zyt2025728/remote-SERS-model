@@ -21,7 +21,8 @@ class DimerResult:
     dipoles: np.ndarray
 
 def solve_pda_dimer(gap_nm: float, radius_nm: float = 10., wavelength_nm: float = 633.,
-                    polarization_deg: float = 0., silver_permittivity: complex = -15+1j,
+                    polarization_deg: float = 0., silver_permittivity: complex =
+                    -18.320291283372367 + 0.4792932084309133j,
                     medium_permittivity: complex = 1+0j, amplitude: complex = 1+0j) -> DimerResult:
     """Solve the exact Level-3A.5 PDA for two spheres and sample the gap center."""
     if gap_nm < 1 or radius_nm <= 0 or wavelength_nm <= 0:

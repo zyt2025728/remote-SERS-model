@@ -74,10 +74,14 @@ def build_calibration(rows: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     cp = fw_x[longitudinal] / pda_x[longitudinal]
     ct = fw_y[transverse] / pda_y[transverse]
     calibration = pd.DataFrame({"gap_nm": rows.loc[longitudinal, "gap_nm"].to_numpy(),
+        "PDA_parallel_real":pda_x[longitudinal].real,"PDA_parallel_imag":pda_x[longitudinal].imag,
+        "MIEPY_parallel_real":fw_x[longitudinal].real,"MIEPY_parallel_imag":fw_x[longitudinal].imag,
         "Cparallel_real": cp.real, "Cparallel_imag": cp.imag, "Cparallel_abs": abs(cp),
         "Cparallel_phase_deg": np.angle(cp, deg=True), "Cperp_real": ct.real,
         "Cperp_imag": ct.imag, "Cperp_abs": abs(ct), "Cperp_phase_deg": np.angle(ct, deg=True),
         "C_M2_parallel": abs(cp)**2, "C_M4_parallel": abs(cp)**4,
+        "PDA_perp_real":pda_y[transverse].real,"PDA_perp_imag":pda_y[transverse].imag,
+        "MIEPY_perp_real":fw_y[transverse].real,"MIEPY_perp_imag":fw_y[transverse].imag,
         "C_M2_perp": abs(ct)**2, "C_M4_perp": abs(ct)**4})
     validation = []
     for angle in (30, 60):
@@ -88,8 +92,11 @@ def build_calibration(rows: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         # Compare phase of the component projected onto incident polarization.
         rad = np.deg2rad(angle)
         pred_proj, actual_proj = pred_x*np.cos(rad)+pred_y*np.sin(rad), fw_x[mask]*np.cos(rad)+fw_y[mask]*np.sin(rad)
+        exerr=abs(pred_x-fw_x[mask])/np.maximum(abs(fw_x[mask]),1e-300)
+        eyerr=abs(pred_y-fw_y[mask])/np.maximum(abs(fw_y[mask]),1e-300)
         validation.extend(pd.DataFrame({"gap_nm": rows.loc[mask,"gap_nm"], "polarization_deg": angle,
             "predicted_abs": pred_abs, "actual_abs": actual_abs,
+            "Ex_complex_relative_error":exerr,"Ey_complex_relative_error":eyerr,
             "relative_magnitude_error": abs(pred_abs-actual_abs)/actual_abs,
             "phase_error_deg": abs((np.angle(pred_proj/actual_proj,deg=True)+180)%360-180)}).to_dict("records"))
     return calibration, pd.DataFrame(validation)
@@ -116,6 +123,23 @@ def correct_network(network: pd.DataFrame, calibration: pd.DataFrame) -> pd.Data
     out["M2_PDA"]=np.sum(abs(E)**2,axis=1); out["M4_PDA"]=out.M2_PDA**2
     out["M2_corrected"]=np.sum(abs(corrected)**2,axis=1); out["M4_corrected"]=out.M2_corrected**2
     return out
+
+
+def load_frozen_network(root=Path("results")) -> pd.DataFrame:
+    """Join immutable exports; no geometry, fields, or classifications are regenerated."""
+    hot=pd.read_csv(root/"level3A/data/hotspots.csv")
+    dist=pd.read_csv(root/"level3A_5/data/corrected_hotspot_distances.csv")
+    particles=pd.read_csv(root/"level2_6/data/particles.csv").set_index("id")
+    hot=hot.drop(columns=["geodesic_distance_nm","remote_classification"]).merge(
+        dist[["hotspot_id","corrected_geodesic_nm","classification"]],on="hotspot_id",validate="one_to_one")
+    hot=hot.rename(columns={"corrected_geodesic_nm":"geodesic_distance_nm","classification":"remote_classification",
+        "Etotal_x_real":"PDA_Ex_real","Etotal_x_imag":"PDA_Ex_imag","Etotal_y_real":"PDA_Ey_real","Etotal_y_imag":"PDA_Ey_imag"})
+    axes=[]
+    for i,j in zip(hot.particle_i,hot.particle_j):
+        d=particles.loc[j,["x_nm","y_nm"]].to_numpy(float)-particles.loc[i,["x_nm","y_nm"]].to_numpy(float); axes.append(d/np.linalg.norm(d))
+    hot[["u_gap_x","u_gap_y"]]=np.asarray(axes)
+    hot["gap_axis_x"],hot["gap_axis_y"]=hot.u_gap_x,hot.u_gap_y
+    return hot
 
 
 def _lineplot(path, groups, ylabel, ratio=False):
@@ -147,14 +171,29 @@ def write_outputs(rows, calibration, validation, network, output: Path):
     source=network[network.remote_classification.astype(str).str.lower().eq("source")]
     summary=pd.DataFrame([{"strongest_PDA_remote_hotspot_id":remote.nlargest(1,"M4_PDA").hotspot_id.iloc[0],"strongest_corrected_remote_hotspot_id":strongest.hotspot_id.iloc[0],"same_gap":remote.nlargest(1,"M4_PDA").hotspot_id.iloc[0]==strongest.hotspot_id.iloc[0],"top_10_overlap":len(top_a&top_b),"spearman_rank_correlation":spearmanr(remote.rank_PDA,remote.rank_corrected).statistic,"source_max_M4":source.M4_corrected.max(),"remote_max_corrected_M4":strongest.M4_corrected.iloc[0],"corrected_remote_source_M4_ratio":strongest.M4_corrected.iloc[0]/source.M4_corrected.max()}])
     summary.to_csv(data/"network_before_after_summary.csv",index=False)
+    fig,ax=plt.subplots();ax.scatter(network.M4_PDA,network.M4_corrected,s=10);lo=min(network.M4_PDA.min(),network.M4_corrected.min());hi=max(network.M4_PDA.max(),network.M4_corrected.max());ax.plot([lo,hi],[lo,hi],"--");ax.set(xscale="log",yscale="log",xlabel="PDA M4",ylabel="corrected M4");fig.tight_layout();fig.savefig(output/"M4_PDA_vs_corrected_scatter.svg");plt.close(fig)
+    events=pd.read_csv("results/level3A_5/data/downstream_enhancement_events.csv")
+    lookup=network.set_index("hotspot_id")
+    events=events[events.upstream_hotspot.isin(lookup.index)&events.downstream_hotspot.isin(lookup.index)].copy()
+    events["Gamma_DE_PDA"]=events.downstream_M4/events.upstream_M4
+    events["Gamma_DE_corrected"]=events.downstream_hotspot.map(lookup.M4_corrected)/events.upstream_hotspot.map(lookup.M4_corrected)
+    events.to_csv(data/"downstream_enhancement_corrected.csv",index=False)
+    stats=[]
+    remote=events.downstream_class.eq("remote")
+    for region,mask in (("whole_network",np.ones(len(events),bool)),("remote_region",remote)):
+      for source,col in (("PDA","Gamma_DE_PDA"),("fullwave_corrected","Gamma_DE_corrected")):
+       for label,sel in ((">1",events[col]>1),(">=2",events[col]>=2),(">=10",events[col]>=10),(">=100",events[col]>=100)):
+        stats.append([region,source,label,int(np.sum(mask&sel)),int(np.sum(mask)),float(np.mean(sel[mask]))])
+    pd.DataFrame(stats,columns=["region","field","criterion","events","transitions","probability"]).to_csv(data/"downstream_enhancement_statistics.csv",index=False)
+    fig,ax=plt.subplots();bins=np.linspace(-5,5,60);ax.hist(np.log10(events.Gamma_DE_PDA),bins=bins,alpha=.55,label="PDA");ax.hist(np.log10(events.Gamma_DE_corrected),bins=bins,alpha=.55,label="full-wave corrected");ax.set(xlabel="log10 Gamma_DE",ylabel="count");ax.legend();fig.tight_layout();fig.savefig(output/"downstream_enhancement_before_after.svg");plt.close(fig)
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--miepy",type=Path,default=Path("results/level3B/USABLE_EGAP_TABLE.csv"));p.add_argument("--pda",type=Path,default=Path("results/level3B/data/Egap_PDA_dimer.csv"));p.add_argument("--network",type=Path,default=Path("results/level3A5/data/network_hotspots.csv"));p.add_argument("--output",type=Path,default=Path("results/level3B"));a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--miepy",type=Path,default=Path("results/level3B/data/Egap_MIEPY_dimer.csv"));p.add_argument("--pda",type=Path,default=Path("results/level3B/data/Egap_PDA_dimer.csv"));p.add_argument("--network",type=Path);p.add_argument("--output",type=Path,default=Path("results/level3B"));p.add_argument("--max-validation-magnitude-error",type=float,default=.05);p.add_argument("--max-validation-phase-error-deg",type=float,default=2.);a=p.parse_args()
     rows=load_dimer_inputs(a.miepy,a.pda);cal,val=build_calibration(rows)
-    if val.relative_magnitude_error.max()>0.05 or val.phase_error_deg.max()>2: raise RuntimeError("component reconstruction validation failed; network correction refused")
-    if not a.network.is_file(): raise FileNotFoundError(f"Frozen network input is missing: {a.network}. Refusing to regenerate geometry.")
-    net=correct_network(pd.read_csv(a.network),cal);write_outputs(rows,cal,val,net,a.output)
+    if val.relative_magnitude_error.max()>a.max_validation_magnitude_error or val.phase_error_deg.max()>a.max_validation_phase_error_deg: raise RuntimeError("component reconstruction validation failed; network correction refused")
+    frozen=pd.read_csv(a.network) if a.network else load_frozen_network()
+    net=correct_network(frozen,cal);write_outputs(rows,cal,val,net,a.output)
 
 
 if __name__ == "__main__": main()
