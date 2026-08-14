@@ -4,6 +4,7 @@ import pytest
 from fullwave_calibration.calibration import CONFIG, converged, phase_delta_deg
 from fullwave_calibration.import_comsol_results import EXPECTED_EPSILON, validate
 from fullwave_calibration.postprocess import build_calibration, correct_network, interpolate_complex
+from fullwave_calibration.diagnostics import exists_nonempty
 import pandas as pd
 import miepy
 
@@ -76,3 +77,12 @@ def test_no_longitudinal_division_at_90_and_phase_preserved():
     corrected=correct_network(network,calibration)
     got=corrected.FWcorrected_Ex_real.iloc[0]+1j*corrected.FWcorrected_Ex_imag.iloc[0]
     assert np.isclose(got,cp*(1+1j))
+
+
+def test_output_check_requires_nonempty_file(tmp_path):
+    path = tmp_path / "result.csv"
+    assert not exists_nonempty(path)
+    path.touch()
+    assert not exists_nonempty(path)
+    path.write_text("header\n")
+    assert exists_nonempty(path)

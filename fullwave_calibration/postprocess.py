@@ -40,6 +40,14 @@ def load_dimer_inputs(miepy_path: Path, pda_path: Path) -> pd.DataFrame:
     fw, pda = pd.read_csv(miepy_path), pd.read_csv(pda_path)
     required_fw = {*KEYS, "solver_backend", "Egap_Ex_real_V_per_m", "Egap_Ex_imag_V_per_m",
                    "Egap_Ey_real_V_per_m", "Egap_Ey_imag_V_per_m", "convergence_status"}
+    # The frozen PDA export contract uses unprefixed Cartesian field names.
+    # Normalize them after validating the file, while retaining compatibility
+    # with earlier validated exports that used a PDA_ prefix.
+    aliases = {name: f"PDA_{name}" for name in
+               ("Ex_real", "Ex_imag", "Ey_real", "Ey_imag", "Ez_real", "Ez_imag")}
+    for source, target in aliases.items():
+        if source in pda and target not in pda:
+            pda[target] = pda[source]
     required_pda = {*KEYS, "PDA_Ex_real", "PDA_Ex_imag", "PDA_Ey_real", "PDA_Ey_imag"}
     for label, frame, required in (("MiePy", fw, required_fw), ("PDA", pda, required_pda)):
         missing = required - set(frame)
@@ -103,6 +111,7 @@ def correct_network(network: pd.DataFrame, calibration: pd.DataFrame) -> pd.Data
     corrected=cp[:,None]*Epar+ct[:,None]*Eperp
     for axis,k in (("Ex",0),("Ey",1)):
         out[f"FWcorrected_{axis}_real"]=corrected[:,k].real; out[f"FWcorrected_{axis}_imag"]=corrected[:,k].imag
+        out[f"corrected_{axis}_real"]=corrected[:,k].real; out[f"corrected_{axis}_imag"]=corrected[:,k].imag
     out["Cparallel_real"],out["Cparallel_imag"]=cp.real,cp.imag; out["Cperp_real"],out["Cperp_imag"]=ct.real,ct.imag
     out["M2_PDA"]=np.sum(abs(E)**2,axis=1); out["M4_PDA"]=out.M2_PDA**2
     out["M2_corrected"]=np.sum(abs(corrected)**2,axis=1); out["M4_corrected"]=out.M2_corrected**2
