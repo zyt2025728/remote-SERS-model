@@ -1,0 +1,17 @@
+region,field,criterion,events,transitions,probability
+whole_network,PDA,>1,201,468,0.42948717948717946
+whole_network,PDA,>=2,130,468,0.2777777777777778
+whole_network,PDA,>=10,47,468,0.10042735042735043
+whole_network,PDA,>=100,11,468,0.023504273504273504
+whole_network,fullwave_corrected,>1,200,468,0.42735042735042733
+whole_network,fullwave_corrected,>=2,160,468,0.3418803418803419
+whole_network,fullwave_corrected,>=10,71,468,0.1517094017094017
+whole_network,fullwave_corrected,>=100,20,468,0.042735042735042736
+remote_region,PDA,>1,17,44,0.38636363636363635
+remote_region,PDA,>=2,10,44,0.22727272727272727
+remote_region,PDA,>=10,5,44,0.11363636363636363
+remote_region,PDA,>=100,1,44,0.022727272727272728
+remote_region,fullwave_corrected,>1,19,44,0.4318181818181818
+remote_region,fullwave_corrected,>=2,15,44,0.3409090909090909
+remote_region,fullwave_corrected,>=10,6,44,0.13636363636363635
+remote_region,fullwave_corrected,>=100,3,44,0.06818181818181818
