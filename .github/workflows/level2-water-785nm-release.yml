@@ -1,0 +1,156 @@
+name: Build Level 2 Ag-water 785 nm release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/level2-water-785nm-release.yml
+      - stochastic_2d/remote_sers_level2_water_785nm.py
+      - stochastic_2d/Ag_Johnson_eps.csv
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: level2-water-785nm-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned dependencies
+        run: python -m pip install numpy==2.1.3 matplotlib==3.9.2
+
+      - name: Run N=200, 400 and 800 full Ag-water study
+        env:
+          MPLBACKEND: Agg
+          MPLCONFIGDIR: /tmp/remote-sers-water-785-matplotlib
+        run: |
+          python -u stochastic_2d/remote_sers_level2_water_785nm.py \
+            | tee remote_SERS_Level2_Water_785nm_run.log
+
+      - name: Verify all 30 realizations and optical parameters
+        run: |
+          python - <<'PY'
+          import csv
+          import math
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path("remote_SERS_Level2_Water_785nm_results/full")
+          summary = root / "size_convergence_summary.csv"
+          rows = list(csv.DictReader(summary.open(encoding="utf-8")))
+          assert len(rows) == 30, f"expected 30 rows, got {len(rows)}"
+          failed = [row for row in rows if row.get("error")]
+          assert not failed, f"failed realizations: {failed}"
+          counts = Counter(int(row["N"]) for row in rows)
+          assert counts == {200: 10, 400: 10, 800: 10}, counts
+
+          optical = dict(csv.reader((root / "optical_parameters.csv").open(encoding="utf-8")))
+          expected = {
+              "excitation_wavelength_nm": 785.0,
+              "raman_wavelength_nm": 851.871947911,
+              "silver_epsilon_exc_real": -29.847229054,
+              "silver_epsilon_exc_imag": 0.378507097,
+              "silver_epsilon_raman_real": -35.853644604,
+              "silver_epsilon_raman_imag": 0.478472090,
+          }
+          for key, target in expected.items():
+              actual = float(optical[key])
+              assert math.isclose(actual, target, rel_tol=0, abs_tol=2e-9), (key, actual)
+          print("Verified 30/30 runs and requested Ag-water 785 nm optical model")
+          PY
+
+      - name: Package downloadable files
+        run: |
+          RESULT_ROOT="remote_SERS_Level2_Water_785nm_results/full"
+          test -d "$RESULT_ROOT/N200"
+          test -d "$RESULT_ROOT/N400"
+          test -d "$RESULT_ROOT/N800"
+
+          zip -q Level2_Water_785nm_code.zip \
+            stochastic_2d/remote_sers_level2_water_785nm.py \
+            stochastic_2d/Ag_Johnson_eps.csv
+          zip -r -q Level2_Water_785nm_results_N200.zip "$RESULT_ROOT/N200"
+          zip -r -q Level2_Water_785nm_results_N400.zip "$RESULT_ROOT/N400"
+          zip -r -q Level2_Water_785nm_results_N800.zip "$RESULT_ROOT/N800"
+          zip -j -q Level2_Water_785nm_summary.zip \
+            "$RESULT_ROOT"/*.csv \
+            "$RESULT_ROOT"/*.png \
+            "$RESULT_ROOT"/*.pdf \
+            remote_SERS_Level2_Water_785nm_run.log
+          zip -r -q Level2_Water_785nm_complete_bundle.zip \
+            stochastic_2d/remote_sers_level2_water_785nm.py \
+            stochastic_2d/Ag_Johnson_eps.csv \
+            .github/workflows/level2-water-785nm-release.yml \
+            remote_SERS_Level2_Water_785nm_results \
+            remote_SERS_Level2_Water_785nm_run.log
+
+          sha256sum \
+            Level2_Water_785nm_code.zip \
+            Level2_Water_785nm_results_N200.zip \
+            Level2_Water_785nm_results_N400.zip \
+            Level2_Water_785nm_results_N800.zip \
+            Level2_Water_785nm_summary.zip \
+            Level2_Water_785nm_complete_bundle.zip \
+            stochastic_2d/remote_sers_level2_water_785nm.py \
+            stochastic_2d/Ag_Johnson_eps.csv \
+            > SHA256SUMS_Water_785nm.txt
+
+      - name: Save a GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-level2-water-785nm-downloads
+          path: |
+            Level2_Water_785nm_code.zip
+            Level2_Water_785nm_results_N200.zip
+            Level2_Water_785nm_results_N400.zip
+            Level2_Water_785nm_results_N800.zip
+            Level2_Water_785nm_summary.zip
+            Level2_Water_785nm_complete_bundle.zip
+            SHA256SUMS_Water_785nm.txt
+            stochastic_2d/remote_sers_level2_water_785nm.py
+            stochastic_2d/Ag_Johnson_eps.csv
+            remote_SERS_Level2_Water_785nm_run.log
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="level2-water-785nm-johnson-20260817-v1"
+          ASSETS=(
+            Level2_Water_785nm_code.zip
+            Level2_Water_785nm_results_N200.zip
+            Level2_Water_785nm_results_N400.zip
+            Level2_Water_785nm_results_N800.zip
+            Level2_Water_785nm_summary.zip
+            Level2_Water_785nm_complete_bundle.zip
+            SHA256SUMS_Water_785nm.txt
+            stochastic_2d/remote_sers_level2_water_785nm.py
+            stochastic_2d/Ag_Johnson_eps.csv
+            remote_SERS_Level2_Water_785nm_run.log
+          )
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          else
+            gh release create "$TAG" "${ASSETS[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "Level 2 remote-SERS: Ag in water at 785 nm" \
+              --notes "Full reproducible N=200, 400 and 800 size-convergence study with ten deterministic seeds per size (30 realizations). The original Level 2.6-2.8 network/CDA algorithm is retained. Ag epsilon is linearly interpolated from the supplied Johnson table at 785.000 nm and the 1000 cm^-1 Stokes wavelength 851.871948 nm. Water dispersion uses the Daimon-Masumura 19 C relation, including the in-medium wave number in both retarded Green-tensor solves."
+          fi
