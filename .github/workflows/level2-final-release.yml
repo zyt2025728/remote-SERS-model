@@ -1,0 +1,122 @@
+name: Build final Level 2 release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/level2-final-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: level2-final-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade numpy matplotlib
+
+      - name: Run N=200, 400 and 800 full study
+        env:
+          MPLBACKEND: Agg
+          MPLCONFIGDIR: /tmp/remote-sers-matplotlib
+        run: |
+          python -u stochastic_2d/remote_sers_final_level2_complete.py \
+            | tee remote_SERS_Final_Level2_run.log
+
+      - name: Verify all 30 realizations
+        run: |
+          python -c "import csv, pathlib; p=pathlib.Path('remote_SERS_Final_Level2_results/full/size_convergence_summary.csv'); rows=list(csv.DictReader(p.open(encoding='utf-8'))); assert len(rows)==30, f'expected 30 rows, got {len(rows)}'; failed=[r for r in rows if r.get('error')]; assert not failed, f'failed realizations: {failed}'"
+
+      - name: Package downloadable files
+        run: |
+          RESULT_ROOT="remote_SERS_Final_Level2_results/full"
+          test -d "$RESULT_ROOT/N200"
+          test -d "$RESULT_ROOT/N400"
+          test -d "$RESULT_ROOT/N800"
+
+          zip -q Level2_code.zip \
+            stochastic_2d/remote_sers_final_level2_complete.py
+          zip -r -q Level2_results_N200.zip "$RESULT_ROOT/N200"
+          zip -r -q Level2_results_N400.zip "$RESULT_ROOT/N400"
+          zip -r -q Level2_results_N800.zip "$RESULT_ROOT/N800"
+          zip -j -q Level2_summary.zip \
+            "$RESULT_ROOT"/*.csv \
+            "$RESULT_ROOT"/*.png \
+            "$RESULT_ROOT"/*.pdf \
+            remote_SERS_Final_Level2_run.log
+          zip -r -q Level2_complete_bundle.zip \
+            stochastic_2d/remote_sers_final_level2_complete.py \
+            .github/workflows/level2-final-release.yml \
+            remote_SERS_Final_Level2_results \
+            remote_SERS_Final_Level2_run.log
+
+          sha256sum \
+            Level2_code.zip \
+            Level2_results_N200.zip \
+            Level2_results_N400.zip \
+            Level2_results_N800.zip \
+            Level2_summary.zip \
+            Level2_complete_bundle.zip \
+            stochastic_2d/remote_sers_final_level2_complete.py \
+            > SHA256SUMS.txt
+
+      - name: Save a GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-level2-downloads
+          path: |
+            Level2_code.zip
+            Level2_results_N200.zip
+            Level2_results_N400.zip
+            Level2_results_N800.zip
+            Level2_summary.zip
+            Level2_complete_bundle.zip
+            SHA256SUMS.txt
+            stochastic_2d/remote_sers_final_level2_complete.py
+            remote_SERS_Final_Level2_run.log
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="level2-final-20260817-v1"
+          ASSETS=(
+            Level2_code.zip
+            Level2_results_N200.zip
+            Level2_results_N400.zip
+            Level2_results_N800.zip
+            Level2_summary.zip
+            Level2_complete_bundle.zip
+            SHA256SUMS.txt
+            stochastic_2d/remote_sers_final_level2_complete.py
+            remote_SERS_Final_Level2_run.log
+          )
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          else
+            gh release create "$TAG" "${ASSETS[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "Final Level 2.6-2.8 remote-SERS results" \
+              --notes "Complete reproducible N=200, 400 and 800 size-convergence study. Ten deterministic seeds were run for each size (30 realizations total). Assets include the complete bundle, separate result packages, source code, summary, checksums and the full run log."
+          fi
