@@ -1,0 +1,92 @@
+{
+  "model_name": "2D stochastic retarded coupled-dipole approximation (CDA) model",
+  "only_variable_parameter": "random_seed",
+  "geometry": {
+    "n_particles": 200,
+    "radius_mean_nm": 10.0,
+    "radius_std_nm": 0.0,
+    "radius_min_nm": 10.0,
+    "radius_max_nm": 10.0,
+    "gap_mean_nm": 3.0,
+    "gap_std_nm": 1.0,
+    "gap_min_nm": 1.0,
+    "gap_max_nm": 6.0,
+    "positional_disorder_rad": 0.45,
+    "connection_gap_nm": 6.0,
+    "max_attempts_per_particle": 4000
+  },
+  "wavelength_nm": 633.0,
+  "nanoparticle_material": "Ag sphere",
+  "particle_relative_permittivity": {
+    "real": -15.0,
+    "imag": 1.0
+  },
+  "surrounding_medium": "homogeneous vacuum, relative permittivity 1+0j",
+  "source_particle_rule": "particle with minimum x coordinate",
+  "aggregate_generation": "validated connected stochastic growth in stochastic_2d.geometry.generate_aggregate",
+  "branching_parameters": "four of every five children favor low-degree parents; every fifth favors compact centroid growth; angular disorder from geometry.positional_disorder_rad",
+  "coordination_constraints": "no hard coordination cap; overlap/minimum-gap rejection and inverse-(1+degree) branch weighting",
+  "minimum_separation_rule": "all particle pairs have surface separation >= geometry.gap_min_nm",
+  "particle_radius_distribution": "frozen truncated normal specified by geometry radius fields",
+  "surface_gap_distribution": "frozen truncated normal specified by geometry gap fields",
+  "gaussian_beam_waist_nm": 55.0,
+  "incident_field_amplitude_V_per_m": {
+    "real": 1.0,
+    "imag": 0.0
+  },
+  "incident_polarization_xyz": [
+    1.0,
+    0.0,
+    0.0
+  ],
+  "incident_propagation_convention": "localized scalar Gaussian envelope; exp(-i omega t)",
+  "hotspot_definition": "midpoint between facing surfaces of every 1-6 nm near contact",
+  "near_contact_graph_criterion_nm": [
+    1.0,
+    6.0
+  ],
+  "source_region_definition": "M2_inc >= 1e-6",
+  "transition_region_definition": "not source and not remote",
+  "remote_region_definition": "M2_inc < 1e-6 and Euclidean source distance > 500 nm",
+  "plasmon_remote_definition": "remote and M2_scat/M2_inc >= 100",
+  "geodesic_distance_definition": "shortest hotspot-adjacency path weighted by midpoint distance",
+  "geodesic_launch_definition": "strongest CDA-M4 source hotspot",
+  "downstream_direction_definition": "strictly increasing corrected weighted geodesic distance",
+  "CDA_polarizability": "Clausius-Mossotti sphere polarizability",
+  "radiation_correction": "alpha=alpha_static/(1-i*k^3*alpha_static/(6*pi*epsilon0*epsilon_m))",
+  "retarded_dyadic_Green_tensor": "full 3D electric dyadic retaining r^-3, r^-2, r^-1 terms",
+  "CDA_solver": "dense complex self-consistent solve using all ordered particle pairs",
+  "fullwave_calibration_table": "results/level3B/data/gap_calibration_table.csv",
+  "C_parallel": "piecewise-linear interpolation of complex real/imaginary columns; no extrapolation",
+  "C_perp": "piecewise-linear interpolation of complex real/imaginary columns; no extrapolation",
+  "calibration_domain_nm": [
+    1.0,
+    6.0
+  ],
+  "solver_backend": "miepy_GMMT",
+  "COMSOL_numerical_status": "NOT EXECUTED",
+  "geodesic_bin_edges_nm": [
+    0.0,
+    100.0,
+    200.0,
+    300.0,
+    400.0,
+    500.0,
+    600.0,
+    700.0,
+    800.0,
+    900.0,
+    1000.0,
+    1100.0,
+    1200.0,
+    1300.0,
+    1400.0,
+    1500.0,
+    1600.0,
+    1700.0,
+    1800.0,
+    1900.0,
+    2000.0
+  ],
+  "random_seed": 21098645
+}
