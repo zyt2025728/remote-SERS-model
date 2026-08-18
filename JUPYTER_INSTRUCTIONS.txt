@@ -1,0 +1,66 @@
+REMOTE-SERS LOCAL JUPYTER INSTRUCTIONS (WINDOWS)
+================================================
+
+Tracked notebook sources
+------------------------
+jupyter\Level2_Jupyter.py
+jupyter\Level3_Jupyter.py
+
+The repository intentionally does not track generated .ipynb files. The Python
+files use Jupyter/Jupytext '# %%' cells and are also directly executable.
+
+1. Open PowerShell in the repository root.
+
+2. Create and activate an environment:
+
+   py -m venv .venv
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   .\.venv\Scripts\Activate.ps1
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
+
+3. Generate both notebooks locally:
+
+   python make_notebooks.py
+
+   This creates jupyter\Level2_Jupyter.ipynb and
+   jupyter\Level3_Jupyter.ipynb. It does not execute them.
+
+4. Start Jupyter:
+
+   jupyter notebook
+
+5. Open jupyter\Level2_Jupyter.ipynb and use "Restart & Run All". After it
+   finishes, open jupyter\Level3_Jupyter.ipynb and use "Restart & Run All".
+   Level 3 checks and loads results\level2 before running. Outputs are written
+   to results\level2 and results\level3, respectively.
+
+Alternative: Visual Studio Code and compatible editors recognize '# %%' cells
+directly, so the .py files can be run interactively without conversion.
+
+Direct script execution
+-----------------------
+From the repository root:
+
+   python jupyter\Level2_Jupyter.py
+   python jupyter\Level3_Jupyter.py
+
+Validated source provenance
+---------------------------
+Level2_Jupyter.py invokes the current validated numerical implementation in:
+   stochastic_2d\validation_level2_6.py
+
+That implementation uses these existing physics modules unchanged:
+   stochastic_2d\geometry.py
+   stochastic_2d\excitation.py
+   stochastic_2d\polarizability.py
+   stochastic_2d\green_tensor.py
+   stochastic_2d\coupled_dipole.py
+
+Level3_Jupyter.py invokes the current validated numerical implementation in:
+   stochastic_2d\validation_level3a_5.py
+
+That implementation additionally uses:
+   stochastic_2d\hotspots.py
+
+No validated source file is replaced by these Jupyter-compatible additions.
